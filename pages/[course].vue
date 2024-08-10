@@ -7,25 +7,72 @@ const { generateContent } = useGoogleAI();
 const isLoading = ref(true);
 const error = ref('');
 const courseSections = ref([]);
+const refVideo = ref('')
+
+const isValidUrl = (url: string) => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const refreshResources = async (sectionName: string, sectionIndex: number) => {
+  try {
+    isLoading.value = true;
+    error.value = "";
+
+    const refreshResult = await generateContent(
+      `Suggest additional resources for the "${sectionName}" section of a course on ${route.params.course}. Provide an array of objects, with each object containing:
+      - "type": either "video", "article", "book", or "other"
+      - "link": a valid URL to the resource (leave empty if not applicable)
+      - "description": a brief description of the resource
+      Ensure all links are functional and relevant.`
+    );
+
+    console.log('refresh result', refreshResult);
+
+    const cleanedResult = refreshResult.replace(/^```json\n/, '').replace(/\n```$/, '');
+    const parsedRefreshResult = JSON.parse(cleanedResult);
+
+    courseSections.value[sectionIndex].resources.push(
+      ...parsedRefreshResult.filter(resource => isValidUrl(resource.link) || resource.type === 'other')
+    );
+  } catch (err) {
+    console.error("Error in refresh:", err);
+    error.value = err instanceof Error ? err.message : "An unexpected error occurred";
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 const onInitialized = async () => {
   error.value = "";
 
   try {
     const result = await generateContent(
-  `Create a course on ${route.params.course}. Provide an array of objects, with each object representing a section. Limit to 8 sections maximum. Each section should have three fields: "name" (the title of the section), "video" (a valid  relavent resource link if available relevant to the topic), and "explanation" (a brief, clear text explanation of the topic). Ensure the YouTube links are functional and the explanations are concise. Return only a plain array.`
-);
+      `Create a course on ${route.params.course}. Provide an array of objects, with each object representing a section. Limit to 8 sections maximum. Each section should have these fields:
+      - "name": the title of the section
+      - "resources": an array of objects, each containing:
+        - "type": either "video", "article", "book", or "other"
+        - "link": a valid URL to the resource (leave empty if not applicable)
+        - "description": a brief description of the resource
+      - "explanation": a comprehensive text explanation of the topic
+      Ensure all links are functional and relevant. If no suitable external resources are available, provide a more detailed explanation instead. Return only a plain array.`
+    );
 
     console.log('raw result', result);
     
-    // Remove ```json from the start and ``` from the end
     const cleanedResult = result.replace(/^```json\n/, '').replace(/\n```$/, '');
-    
-    // Parse the JSON string into an object
     const parsedResult = JSON.parse(cleanedResult);
     
     console.log('parsed result', parsedResult);
-    courseSections.value = parsedResult;
+
+    courseSections.value = parsedResult.map(section => ({
+      ...section,
+      resources: section.resources.filter(resource => isValidUrl(resource.link) || resource.type === 'other')
+    }));
   } catch (err) {
     console.error("Error in search:", err);
     error.value =
@@ -35,15 +82,23 @@ const onInitialized = async () => {
   }
 };
 
+
+const refreshVideo = async (videoName: string)=>{
+    refVideo.value = await generateContent(
+      `Suggest Me a valid working Youtube video link of ${videoName}. Just the link nothing else`
+    );
+    console.log(refVideo.value)
+}
 onInitialized();
 </script>
+
 
 <template>
   <div class="course-container">
     <h1>Course: {{ route.params.course }}</h1>
     
     <div v-if="isLoading" class="loader">
-      Loading...
+        <v-skeleton-loader :elevation="20" type="article"></v-skeleton-loader>
     </div>
     
     <div v-else-if="error" class="error">
@@ -56,7 +111,21 @@ onInitialized();
           <summary>{{ section.name }}</summary>
           <div class="accordion-content">
             <p>{{ section.explanation }}</p>
-            <p>Related video: <a :href="section.video" target="_blank" rel="noopener noreferrer">Watch on YouTube</a></p>
+            <div v-if="section.resources.length > 0">
+              <h3>Additional Resources:</h3>
+              <ul>
+                <li v-for="(resource, rIndex) in section.resources" :key="rIndex">
+                  <strong>{{ resource.type }}:</strong>
+                  <template v-if="resource.link">
+                    <a :href="resource.link" target="_blank" rel="noopener noreferrer">{{ resource.description }}</a>
+                  </template>
+                  <template v-else>
+                    {{ resource.description }}
+                  </template>
+                </li>
+              </ul>
+              <div @click="refreshVideo(section.name)" class="flex">    <span class="bg-color=red">If video is Broken Refresh </span>  <v-btn icon="mdi-refresh" size="small" ></v-btn> </div> 
+            </div>
           </div>
         </details>
       </div>
