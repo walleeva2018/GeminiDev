@@ -24,7 +24,7 @@ const onSearch = async () => {
 
   try {
     result.value = await generateContent(
-      `Suggest Some Course based on ${searchQuery.value}. Only return a array of suggested course title nothing else`
+      `Suggest Some Course based on ${searchQuery.value}. Only return a array of suggested course title nothing else []. Do not add extra quote or anything is resp`
     );
 
     // Parse the result and update items
@@ -53,6 +53,10 @@ const onSearch = async () => {
 function listClicked(name: string) {
   navigateTo(`/${name}`)
 }
+
+function savedCourse(){
+  navigateTo('/myCourse')
+}
 </script>
 <template>
   <div class="container">
@@ -67,9 +71,15 @@ function listClicked(name: string) {
         />
         <i class="fas fa-search search-icon"></i>
       </div>
+      <div class="flex space-between">
       <button @click="onSearch" class="create-button" :disabled="isLoading">
         {{ isLoading ? "Creating..." : "Create Course" }}
       </button>
+
+      <button @click="savedCourse" class="create-button ml-5" :disabled="isLoading">
+              My Course
+      </button>
+    </div>
 
       <div v-if="isLoading" class="mt-10">
         <v-skeleton-loader :elevation="13" type="article"></v-skeleton-loader>

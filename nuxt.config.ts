@@ -29,4 +29,6 @@ export default defineNuxtConfig({
       encryptKey: process.env.ENCRYPTED_CODE
     },
   },
+
+
 })

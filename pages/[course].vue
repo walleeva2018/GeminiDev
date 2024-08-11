@@ -10,6 +10,7 @@ const error = ref("");
 const courseSections = ref([]);
 const refVideo = ref([]);
 const isYoutube = ref(false);
+const totalMarks = ref(0)
 
 const isValidUrl = (url: string) => {
   try {
@@ -29,7 +30,7 @@ const onInitialized = async () => {
       - "name": the title of the section
       - "resources": an array of objects, each containing ( at least 1 valid video type and 1 valid article link type):
         - "type":  "video" Or "article"
-        - "link": a valid URL to the resource (leave empty if not applicable)
+        - "link": a valid live working URL to the resource (leave empty if not found)
         - "description": Name to show what this resource is
       - "explanation": a comprehensive text explanation of the topic
       Ensure all links are functional and relevant. If no suitable external resources are available, provide a more detailed explanation instead. Return only a plain array.`
@@ -67,14 +68,15 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
       {
         params: {
           part: "snippet",
-          q: `${sectionName}`,
+          q: `${route.params.course}-${sectionName}`,
           type: "video",
           maxResults: 2,
-          key: useRuntimeConfig().public.youtubeApiKey,
+          key: config.public.youtubeApiKey,
         },
       }
     );
 
+    console.log('came here')
     console.log(
       data.value.items[0],
       error.value,
@@ -98,12 +100,55 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
   }
 };
 onInitialized();
+
+function handleMarked(index: number){
+  courseSections.value[index]['marked'] = courseSections.value[index]['marked'] ? !courseSections.value[index]['marked']: true
+}
+
+function handleScore(score: number, index: number) {
+  console.log(totalMarks.value, score, totalMarks.value + score);
+  totalMarks.value += score.value; // Add the score to the current total
+  courseSections.value[index].score = score.value;
+}
+
+
+function saveCourse() {
+  try {
+    const courseData = JSON.stringify(courseSections.value);
+    localStorage.setItem('savedCourse', courseData);
+    console.log('Course successfully saved to local storage!');
+    navigateTo('/')
+  } catch (err) {
+    console.error('Failed to save the course:', err);
+  }
+}
+
+
+function generateCertificate() {
+  const totalSections = courseSections.value.length;
+  const percentage = (totalMarks.value / (totalSections * 100)) * 100;
+
+  console.log(totalMarks.value, totalSections, percentage);
+
+  if (percentage >= 80) {
+    // Logic to generate the certificate
+    console.log("Certificate generated!");
+  } else {
+    alert("Your score is less than 80%. You need to score higher to generate a certificate.");
+  }
+}
+
 </script>
 
 <template>
   <div class="course-container">
     <h1>Course: {{ route.params.course }}</h1>
-
+    <button @click="generateCertificate" class="create-button mb-5" :disabled="isLoading">
+        Generate Certificate
+      </button>
+      <button @click="saveCourse" class="create-button mb-5 ml-5" :disabled="isLoading">
+        Save Course
+      </button>
     <div v-if="isLoading" class="loader">
       <v-skeleton-loader :elevation="20" type="article"></v-skeleton-loader>
     </div>
@@ -190,12 +235,12 @@ onInitialized();
                   </li>
                 </div>
               </ul>
-              <div @click="refreshVideo(section.name, index)" class="flex">
+              <div @click="refreshVideo(section.explanation, index)" class="flex mb-8">
                 <span class="bg-color=red">If video is Broken Refresh </span>
                 <v-btn icon="mdi-refresh" size="small"></v-btn>
               </div>
 
-              <quiz-component :topic="section.explanation"/>
+              <quiz-component :topic="section.explanation" @marked="handleMarked(index)"  @score="handleScore($event, index)" />
             </div>
           </div>
         </details>
@@ -277,4 +322,19 @@ h1 {
   text-decoration: underline;
 }
 
+.create-button {
+  padding: 10px 20px;
+  background-color: #ffd52d;
+  color: #000000;
+  border: none;
+  border-radius: 25px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.create-button:hover {
+  background-color: #ffea00;
+  transform: scale(1.05);
+}
 </style>
