@@ -25,6 +25,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       googleAiApiKey: process.env.GOOGLE_AI_API_KEY,
+      youtubeApiKey: process.env.YOUTUBE_API_KEY,
+      encryptKey: process.env.ENCRYPTED_CODE
     },
   },
 })
