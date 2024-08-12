@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useGoogleAI } from "~/composables/useGoogleAI";
-import QuizComponent from "~/components/QuizComponent.vue"; // Adjust the import path as needed
+import QuizComponent from "~/components/QuizComponent.vue";
 import certificate from "~/components/Certificate.vue";
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
 
 const config = useRuntimeConfig();
 const courseSections = ref([]);
@@ -142,10 +146,18 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
     isYoutube.value = false;
   }
 };
+
+function goBack(){
+  router.push('/')
+}
 </script>
 
 <template>
   <div class="course-container">
+    <button @click="goBack" class="back-button">  <v-icon
+          icon="mdi-arrow-left"
+          start
+        ></v-icon> Back</button>
     <h1>{{ courseName }}</h1>
 
     <div v-if="error" class="error">
@@ -255,6 +267,33 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
 </template>
 
 <style scoped>
+
+.back-button {
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: #0056b3;
+}
+
+@media (max-width: 600px) {
+  .back-button {
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    font-size: 18px;
+  }
+}
+
+
 .course-container {
   max-width: 800px;
   margin: 0 auto;

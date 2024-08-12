@@ -55,7 +55,7 @@
     </v-card>
   </v-dialog>
 
-  <v-dialog v-model="resultDialogOpen" max-width="400">
+  <v-dialog v-model="resultDialogOpen" max-width="400" persistent>
   <v-card>
     <v-card-title>Quiz Results</v-card-title>
     <v-card-text>
@@ -170,6 +170,8 @@ function handleClose() {
   resultDialogOpen.value = false
   dialogOpen.value = false
   emit('score', score)
+  emit('marked', true);
+  marked.value= true
 }
 
 </script>

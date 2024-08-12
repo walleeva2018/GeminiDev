@@ -30,7 +30,7 @@ const onInitialized = async () => {
     const result = await generateContent(
       `Create a course on ${route.params.course}. Provide an array of objects, with each object representing a section. Limit to 8 sections maximum. Each section should have these fields:
       - "name": the title of the section
-      - "resources": an array of objects, each containing ( at least 1 valid video type and 1 valid article link type):
+      - "resources": an array of objects, each containing ( at least 1 valid video from youtube or any platform  type and 1 valid article from wikipedia or any platform link type. Make sure they are not broken. They have to exist and if not return empty):
         - "type":  "video" Or "article"
         - "link": a valid live working URL to the resource (leave empty if not found)
         - "description": Name to show what this resource is
@@ -150,6 +150,10 @@ function generateCertificate() {
 
 <template>
   <div class="course-container">
+    <button @click="navigateTo('/')" class="back-button">  <v-icon
+          icon="mdi-arrow-left"
+          start
+        ></v-icon> Back</button>
     <h1>Course: {{ route.params.course }}</h1>
     <button
       @click="generateCertificate"
@@ -280,6 +284,33 @@ function generateCertificate() {
 </template>
 
 <style scoped>
+
+.back-button {
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: #0056b3;
+}
+
+@media (max-width: 600px) {
+  .back-button {
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    font-size: 18px;
+  }
+}
+
+
 .course-container {
   max-width: 800px;
   margin: 0 auto;
