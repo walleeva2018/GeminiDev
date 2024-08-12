@@ -10,7 +10,9 @@ const error = ref("");
 const courseSections = ref([]);
 const refVideo = ref([]);
 const isYoutube = ref(false);
-const totalMarks = ref(0)
+const totalMarks = ref(0);
+const totalModule = ref(0);
+const isCert = ref(false)
 
 const isValidUrl = (url: string) => {
   try {
@@ -76,7 +78,7 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
       }
     );
 
-    console.log('came here')
+    console.log("came here");
     console.log(
       data.value.items[0],
       error.value,
@@ -101,28 +103,32 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
 };
 onInitialized();
 
-function handleMarked(index: number){
-  courseSections.value[index]['marked'] = courseSections.value[index]['marked'] ? !courseSections.value[index]['marked']: true
+function handleMarked(index: number) {
+  if (courseSections.value[index]["marked"])
+    totalModule.value = totalModule.value + 1;
+  if (courseSections.value[index]["marked"] === false)
+    totalModule.value = totalModule.value - 1;
+  courseSections.value[index]["marked"] = courseSections.value[index]["marked"]
+    ? !courseSections.value[index]["marked"]
+    : true;
 }
 
 function handleScore(score: number, index: number) {
   console.log(totalMarks.value, score, totalMarks.value + score);
   totalMarks.value += score.value; // Add the score to the current total
-  courseSections.value[index].score = score.value;
+  courseSections.value[index].score = score;
 }
-
 
 function saveCourse() {
   try {
     const courseData = JSON.stringify(courseSections.value);
-    localStorage.setItem('savedCourse', courseData);
-    console.log('Course successfully saved to local storage!');
-    navigateTo('/')
+    localStorage.setItem("savedCourse", courseData);
+    console.log("Course successfully saved to local storage!");
+    navigateTo("/");
   } catch (err) {
-    console.error('Failed to save the course:', err);
+    console.error("Failed to save the course:", err);
   }
 }
-
 
 function generateCertificate() {
   const totalSections = courseSections.value.length;
@@ -133,22 +139,39 @@ function generateCertificate() {
   if (percentage >= 80) {
     // Logic to generate the certificate
     console.log("Certificate generated!");
+    isCert.value = true
   } else {
-    alert("Your score is less than 80%. You need to score higher to generate a certificate.");
+    alert(
+      "Your score is less than 80%. You need to score higher to generate a certificate."
+    );
   }
 }
-
 </script>
 
 <template>
   <div class="course-container">
     <h1>Course: {{ route.params.course }}</h1>
-    <button @click="generateCertificate" class="create-button mb-5" :disabled="isLoading">
-        Generate Certificate
-      </button>
-      <button @click="saveCourse" class="create-button mb-5 ml-5" :disabled="isLoading">
-        Save Course
-      </button>
+    <button
+      @click="generateCertificate"
+      class="create-button mb-5"
+      :disabled="isLoading"
+    >
+      Generate Certificate
+    </button>
+    <button
+      @click="saveCourse"
+      class="create-button mb-5 ml-5"
+      :disabled="isLoading"
+    >
+      Save Course
+    </button>
+    <certificate
+      v-if="isCert"
+      :marks="(totalMarks / courseSections.length) * 100 * 100"
+      :module="0"
+      :course="route.params.course"
+      :total-module="courseSections.length"
+    />
     <div v-if="isLoading" class="loader">
       <v-skeleton-loader :elevation="20" type="article"></v-skeleton-loader>
     </div>
@@ -235,12 +258,19 @@ function generateCertificate() {
                   </li>
                 </div>
               </ul>
-              <div @click="refreshVideo(section.explanation, index)" class="flex mb-8">
+              <div
+                @click="refreshVideo(section.explanation, index)"
+                class="flex mb-8"
+              >
                 <span class="bg-color=red">If video is Broken Refresh </span>
                 <v-btn icon="mdi-refresh" size="small"></v-btn>
               </div>
 
-              <quiz-component :topic="section.explanation" @marked="handleMarked(index)"  @score="handleScore($event, index)" />
+              <quiz-component
+                :topic="section.explanation"
+                @marked="handleMarked(index)"
+                @score="handleScore($event, index)"
+              />
             </div>
           </div>
         </details>

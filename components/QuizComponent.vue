@@ -56,19 +56,24 @@
   </v-dialog>
 
   <v-dialog v-model="resultDialogOpen" max-width="400">
-    <v-card>
-      <v-card-title>Quiz Results</v-card-title>
-      <v-card-text>
-        <p>Correct Answers: {{ correctAnswers }}</p>
-        <p>Wrong Answers: {{ wrongAnswers }}</p>
-        <p>Score: {{ score }}%</p>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="primary" @click="handleClose">Close</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+  <v-card>
+    <v-card-title>Quiz Results</v-card-title>
+    <v-card-text>
+      <p>Correct Answers: {{ correctAnswers }}</p>
+      <p>Wrong Answers: {{ wrongAnswers }}</p>
+      <p>Score: {{ score }}%</p>
+      <v-divider class="my-3"></v-divider>
+      <p style="color: #f44336; font-size: 14px;">
+        ⚠️ Note: These results are AI-judged and may not always be 100% accurate.
+      </p>
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn color="primary" @click="handleClose">Close</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+
 </template>
 
 <script setup lang="ts">

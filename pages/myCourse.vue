@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from "vue";
 import { useGoogleAI } from "~/composables/useGoogleAI";
-import QuizComponent from '~/components/QuizComponent.vue'; // Adjust the import path as needed
+import QuizComponent from "~/components/QuizComponent.vue"; // Adjust the import path as needed
+import certificate from "~/components/Certificate.vue";
 
 const config = useRuntimeConfig();
 const courseSections = ref([]);
-const courseName = ref('');
+const courseName = ref("");
 const totalMarks = ref(0);
-const error = ref('');
+const error = ref("");
 const { generateContent } = useGoogleAI();
 const isLoading = ref(false);
 const isYoutube = ref(false);
 const refVideo = ref([]);
+const totalModule = ref(0);
+const isCert = ref(false)
 
 onMounted(() => {
   loadSavedCourse();
@@ -19,17 +22,22 @@ onMounted(() => {
 
 function loadSavedCourse() {
   try {
-    const savedCourseData = localStorage.getItem('savedCourse');
+    const savedCourseData = localStorage.getItem("savedCourse");
     if (savedCourseData) {
       courseSections.value = JSON.parse(savedCourseData);
       calculateTotalMarks();
+      courseSections.value.forEach((item) => {
+        if (item?.marked) {
+          totalModule.value = totalModule.value + 1;
+        }
+      });
       courseName.value = getCourseNameFromSections();
     } else {
-      error.value = 'No saved course found.';
+      error.value = "No saved course found.";
     }
   } catch (err) {
-    console.error('Failed to load the course:', err);
-    error.value = 'Failed to load the saved course. Please try again.';
+    console.error("Failed to load the course:", err);
+    error.value = "Failed to load the saved course. Please try again.";
   }
 }
 
@@ -42,9 +50,9 @@ function calculateTotalMarks() {
 function getCourseNameFromSections() {
   if (courseSections.value.length > 0) {
     const firstSection = courseSections.value[0];
-    return firstSection.name.split('-')[0].trim() || 'Saved Course';
+    return firstSection.name.split("-")[0].trim() || "Saved Course";
   }
-  return 'Saved Course';
+  return "Saved Course";
 }
 
 function generateCertificate() {
@@ -53,39 +61,48 @@ function generateCertificate() {
 
   if (percentage >= 80) {
     console.log("Certificate generated!");
+    isCert.value = true
     // Implement certificate generation logic here
   } else {
-    alert("Your score is less than 80%. You need to score higher to generate a certificate.");
+    alert(
+      "Your score is less than 80%. You need to score higher to generate a certificate."
+    );
   }
 }
 
 function deleteSavedCourse() {
-  if (confirm('Are you sure you want to delete this saved course?')) {
-    localStorage.removeItem('savedCourse');
+  if (confirm("Are you sure you want to delete this saved course?")) {
+    localStorage.removeItem("savedCourse");
     courseSections.value = [];
     totalMarks.value = 0;
-    error.value = 'Course deleted. You can now start a new course.';
+    error.value = "Course deleted. You can now start a new course.";
   }
 }
 
 function saveCourse() {
   try {
     const courseData = JSON.stringify(courseSections.value);
-    localStorage.setItem('savedCourse', courseData);
-    console.log('Course successfully saved to local storage!');
+    localStorage.setItem("savedCourse", courseData);
+    console.log("Course successfully saved to local storage!");
   } catch (err) {
-    console.error('Failed to save the course:', err);
+    console.error("Failed to save the course:", err);
   }
 }
 
 function handleMarked(index: number) {
+  totalModule.value = 0;
   courseSections.value[index].marked = !courseSections.value[index].marked;
+  courseSections.value.forEach((item) => {
+    if (item?.marked) {
+      totalModule.value = totalModule.value + 1;
+    }
+  });
   saveCourse();
 }
 
 function handleScore(score: number, index: number) {
   totalMarks.value += score.value;
-  courseSections.value[index].score = score.value;
+  courseSections.value[index].score = score;
   saveCourse();
 }
 
@@ -130,7 +147,7 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
 <template>
   <div class="course-container">
     <h1>{{ courseName }}</h1>
-    
+
     <div v-if="error" class="error">
       {{ error }}
     </div>
@@ -144,13 +161,26 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
           Delete Saved Course
         </button>
       </div>
-
-      <div v-for="(section, index) in courseSections" :key="index" class="accordion">
+      <certificate
+        v-if="isCert"
+        :marks="(totalMarks / (courseSections.length * 100)) * 100"
+        :module="totalModule"
+        :course="courseName"
+        :total-module="courseSections.length"
+      />
+      <div
+        v-for="(section, index) in courseSections"
+        :key="index"
+        class="accordion"
+      >
         <details>
           <summary>
             {{ section.name }}
-            <span :class="['mark-indicator', { marked: section.marked }]" @click.stop="handleMarked(index)">
-              {{ section.marked ? '★' : '☆' }}
+            <span
+              :class="['mark-indicator', { marked: section.marked }]"
+              @click.stop="handleMarked(index)"
+            >
+              {{ section.marked ? "★" : "☆" }}
             </span>
           </summary>
           <div class="accordion-content">
@@ -159,9 +189,17 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
             <div v-if="section.resources && section.resources.length > 0">
               <h3>Additional Resources:</h3>
               <ul>
-                <li v-for="(resource, rIndex) in section.resources" :key="rIndex">
+                <li
+                  v-for="(resource, rIndex) in section.resources"
+                  :key="rIndex"
+                >
                   <strong>{{ resource.type }}:</strong>
-                  <a v-if="resource.link" :href="resource.link" target="_blank" rel="noopener noreferrer">
+                  <a
+                    v-if="resource.link"
+                    :href="resource.link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {{ resource.description }}
                   </a>
                   <span v-else>{{ resource.description }}</span>
@@ -173,7 +211,11 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
               <h3>Referenced Videos:</h3>
               <ul>
                 <li v-for="(video, vIndex) in section.refVideos" :key="vIndex">
-                  <a :href="'https://www.youtube.com/watch?v=' + video.link" target="_blank" rel="noopener noreferrer">
+                  <a
+                    :href="'https://www.youtube.com/watch?v=' + video.link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {{ video.desc }}
                   </a>
                 </li>
@@ -192,20 +234,21 @@ const refreshVideo = async (sectionName: string, sectionIndex: number) => {
               :key="section.name"
             ></v-skeleton-loader>
 
-            <quiz-component 
+            <quiz-component
               :topic="section.explanation"
-              :parentScore="section.score" 
+              :parentScore="section.score"
               :parentMarked="section.marked"
-              @marked="handleMarked(index)"  
-              @score="handleScore($event, index)" 
+              @marked="handleMarked(index)"
+              @score="handleScore($event, index)"
             />
-
           </div>
         </details>
       </div>
 
       <div class="total-score">
-        <h2>Total Score: {{ totalMarks }} / {{ courseSections.length * 100 }}</h2>
+        <h2>
+          Total Score: {{ totalMarks }} / {{ courseSections.length * 100 }}
+        </h2>
       </div>
     </div>
   </div>
