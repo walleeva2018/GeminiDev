@@ -289,6 +289,7 @@ function generateCertificate() {
   padding: 8px 15px;
   background-color: #007bff;
   color: #fff;
+  width: 100%;
   border: none;
   border-radius: 5px;
   font-size: 16px;
@@ -388,6 +389,7 @@ h1 {
   background-color: #ffd52d;
   color: #000000;
   border: none;
+  width: 100%;
   border-radius: 25px;
   font-size: 18px;
   cursor: pointer;

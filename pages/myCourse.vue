@@ -272,6 +272,7 @@ function goBack(){
   padding: 8px 15px;
   background-color: #007bff;
   color: #fff;
+  width: 100%;
   border: none;
   border-radius: 5px;
   font-size: 16px;
